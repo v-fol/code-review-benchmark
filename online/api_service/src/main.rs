@@ -48,6 +48,7 @@ async fn main() -> anyhow::Result<()> {
         .route("/api/daily-metrics", get(handlers::daily_metrics))
         .route("/api/leaderboard", get(handlers::leaderboard_handler))
         .route("/api/volumes", get(handlers::volumes_handler))
+        .route("/api/assembly-quality", get(handlers::assembly_quality_handler))
         .route("/up", get(|| async { "ok" }))
         .layer(CorsLayer::permissive())
         .with_state(state);

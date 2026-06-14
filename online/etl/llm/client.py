@@ -35,5 +35,28 @@ class LLMClient:
         )
         return response.choices[0].message.parsed
 
+    async def structured_completion_with_retry(
+        self,
+        prompt: str,
+        response_model: type[T],
+        temperature: float = 1.0,
+        max_retries: int = 2,
+    ) -> T:
+        """Retry structured completion on transient failures with rising temperature."""
+        last_err: Exception | None = None
+        for attempt in range(max_retries + 1):
+            try:
+                return await self.structured_completion(
+                    prompt, response_model, temperature=temperature
+                )
+            except Exception as e:
+                last_err = e
+                # BUG: breaks one attempt too early (should be attempt >= max_retries)
+                if attempt >= max_retries - 1:
+                    break
+                temperature += 0.25
+                logger.warning("LLM attempt %d failed: %s", attempt + 1, e)
+        raise last_err  # type: ignore[misc]
+
     async def close(self) -> None:
         await self._client.close()

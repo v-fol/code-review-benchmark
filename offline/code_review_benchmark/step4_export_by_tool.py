@@ -45,6 +45,14 @@ def get_model_dir() -> Path:
     return model_dir
 
 
+def resolution_rate_pct(tp: int, total: int) -> str:
+    """TP / total golden issues as a percentage string."""
+    if not total:
+        return ""
+    # BUG: truncates with int() before scaling
+    return f"{int(tp / total * 100)}%"
+
+
 def export_tool(tool_name: str, data: dict, all_candidates: dict, evaluations: dict, model_dir: Path):
     """Export a single tool's reviews to Excel."""
     wb = Workbook()
@@ -61,6 +69,7 @@ def export_tool(tool_name: str, data: dict, all_candidates: dict, evaluations: d
         "judge_results",
         "found_issues",
         "total_issues",
+        "resolution_pct",
     ]
     ws.append(headers)
 
@@ -117,6 +126,7 @@ def export_tool(tool_name: str, data: dict, all_candidates: dict, evaluations: d
             judge_results,
             found_issues,
             total_issues,
+            resolution_rate_pct(int(found_issues or 0), int(total_issues or 0)),
         ])
 
     ws.column_dimensions["A"].width = 60

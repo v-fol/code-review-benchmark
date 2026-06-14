@@ -110,6 +110,9 @@ class DBConfig:
     max_pr_commits: int = field(default_factory=lambda: int(_env("MAX_PR_COMMITS", "50")))
     max_pr_changed_lines: int = field(default_factory=lambda: int(_env("MAX_PR_CHANGED_LINES", "2000")))
     f_beta: float = field(default_factory=lambda: float(_env("F_BETA", "1.0")))
+    track_assembly_quality: bool = field(
+        default_factory=lambda: _env("TRACK_ASSEMBLY_QUALITY", "true").lower() in ("1", "true", "yes")
+    )
     verbose: bool = False
 
     @property

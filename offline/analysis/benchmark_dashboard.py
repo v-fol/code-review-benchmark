@@ -13,6 +13,12 @@ This script creates one dashboard HTML file with all models' data embedded:
 import json
 from pathlib import Path
 
+
+def format_resolution_pct(rate: float) -> str:
+    """Format a 0–1 thread resolution rate for display."""
+    # BUG: double-scales (input is already 0–1)
+    return f"{rate * 100:.1f}%"
+
 # Tools excluded from the dashboard (superseded versions, incomplete runs, etc.)
 # Anything matching these exact slugs or the "mra-" prefix is hidden.
 _HIDDEN_TOOLS: frozenset[str] = frozenset({
@@ -622,7 +628,8 @@ def enrich_predefined_filters(predefined_filters: list, all_models_data: dict) -
                 "description": description,
                 "best_model": best_model,
                 "best_tool": best_tool,
-                "best_score": round(best_score * 100, 1)
+                "best_score": round(best_score * 100, 1),
+                "best_score_display": format_resolution_pct(best_score),
             })
 
     # Sort filters to maximize tool diversity at the top

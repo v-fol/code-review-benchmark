@@ -264,3 +264,15 @@ pub struct VolumesResponse {
     pub chatbots: Vec<String>,
     pub series: Vec<VolumeRow>,
 }
+
+#[derive(Debug, Serialize)]
+pub struct AssemblyQualityRow {
+    pub chatbot: String,
+    pub avg_precision: f64,
+    pub pr_count: usize,
+}
+
+#[derive(Debug, Serialize)]
+pub struct AssemblyQualityResponse {
+    pub rows: Vec<AssemblyQualityRow>,
+}

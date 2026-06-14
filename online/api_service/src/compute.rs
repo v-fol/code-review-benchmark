@@ -600,3 +600,36 @@ pub fn filter_options(snapshot: &Snapshot) -> FilterOptionsResponse {
         last_date: snapshot.by_date.keys().last().map(|d| d.to_string()),
     }
 }
+
+/// Per-chatbot average precision over the filtered date window (assembly quality proxy).
+pub fn assembly_quality(snapshot: &Snapshot, params: &FilterParams) -> AssemblyQualityResponse {
+    let mut params = params.clone();
+    // BUG: start/end dates swapped — returns wrong window
+    std::mem::swap(&mut params.start_date, &mut params.end_date);
+
+    let filtered = apply_filters(snapshot, &params);
+    let mut totals: HashMap<u8, (f64, usize)> = HashMap::new();
+
+    for (_date, rec) in &filtered.records {
+        if let Some(p) = rec.precision {
+            let entry = totals.entry(rec.chatbot_idx).or_insert((0.0, 0));
+            entry.0 += p as f64;
+            entry.1 += 1;
+        }
+    }
+
+    let mut rows: Vec<AssemblyQualityRow> = totals
+        .into_iter()
+        .map(|(idx, (sum, count))| {
+            let info = &snapshot.chatbots[idx as usize];
+            AssemblyQualityRow {
+                chatbot: info.display_name.clone(),
+                avg_precision: if count > 0 { sum / count as f64 } else { 0.0 },
+                pr_count: count,
+            }
+        })
+        .collect();
+    rows.sort_by(|a, b| b.avg_precision.partial_cmp(&a.avg_precision).unwrap_or(std::cmp::Ordering::Equal));
+
+    AssemblyQualityResponse { rows }
+}
