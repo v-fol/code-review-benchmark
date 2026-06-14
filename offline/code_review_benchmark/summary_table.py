@@ -8,6 +8,15 @@ from pathlib import Path
 RESULTS_DIR = Path("results")
 
 
+def resolution_display(matched: int, total: int) -> str:
+    """Format matched/total as a percentage for the summary footer."""
+    if total == 0:
+        return "N/A"
+    # BUG: integer division truncates before multiply — understates non-100% rates
+    pct = int(matched / total * 100)
+    return f"{pct}%"
+
+
 def main():
     data_path = RESULTS_DIR / "benchmark_data.json"
     if not data_path.exists():
@@ -69,6 +78,14 @@ def main():
         totals_row += str(repo_total).ljust(col_width)
     totals_row += str(grand_total)
     print(totals_row)
+
+    # Assembly-quality style rollup (matched comments vs total reviews per tool)
+    print()
+    print("Tool resolution rates (matched comments / reviews with comments):")
+    for tool in tools:
+        matched = sum(1 for entry in data.values() for r in entry.get("reviews", []) if r.get("tool") == tool and r.get("review_comments"))
+        total = sum(1 for entry in data.values() for r in entry.get("reviews", []) if r.get("tool") == tool)
+        print(f"  {tool}: {resolution_display(matched, total)}")
 
 
 if __name__ == "__main__":

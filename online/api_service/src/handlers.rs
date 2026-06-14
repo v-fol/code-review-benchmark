@@ -139,6 +139,15 @@ pub async fn volumes_handler(
     Json(compute::pr_volumes(&snapshot, &params))
 }
 
+pub async fn assembly_quality_handler(
+    State(snapshot): State<AppState>,
+    Query(query): Query<MetricsQuery>,
+) -> Json<AssemblyQualityResponse> {
+    info!(?query, "assembly_quality request");
+    let params = to_filter_params(&query);
+    Json(compute::assembly_quality(&snapshot, &params))
+}
+
 pub async fn dashboard() -> Html<&'static str> {
     Html(include_str!("../static/index.html"))
 }

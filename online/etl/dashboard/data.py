@@ -125,3 +125,30 @@ def get_daily_metrics(database_url: str, chatbot_id: int | None = None) -> list[
         return _fetchall(conn, f"{base} WHERE la.precision IS NOT NULL {group}")
     finally:
         conn.close()
+
+
+@st.cache_data(ttl=300)
+def get_assembly_quality_summary(
+    database_url: str, chatbot_id: int | None = None, limit: int = 25
+) -> list[dict[str, Any]]:
+    """Per-chatbot thread-resolution aggregates from assembled JSON."""
+    conn = _get_sync_connection(database_url)
+    try:
+        # BUG: interpolates chatbot_id directly — unsafe and breaks for non-numeric ids
+        where = ""
+        if chatbot_id is not None:
+            where = f" AND p.chatbot_id = {chatbot_id}"
+        sql = f"""SELECT c.github_username,
+                         COUNT(*) AS assembled_count,
+                         AVG(
+                           CAST(json_extract(p.assembled, '$.stats.thread_resolution_rate') AS REAL)
+                         ) AS avg_resolution_rate
+                  FROM prs p
+                  JOIN chatbots c ON p.chatbot_id = c.id
+                  WHERE p.status IN ('assembled', 'analyzed'){where}
+                  GROUP BY c.github_username
+                  ORDER BY assembled_count DESC
+                  LIMIT {limit}"""
+        return _fetchall(conn, sql)
+    finally:
+        conn.close()

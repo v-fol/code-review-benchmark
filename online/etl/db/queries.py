@@ -411,3 +411,18 @@ GET_ALL_PR_STATUS_COUNTS = """
     JOIN chatbots c ON p.chatbot_id = c.id
     GROUP BY c.github_username, p.status
 """
+
+GET_ASSEMBLY_QUALITY_SUMMARY = """
+    SELECT c.github_username,
+           COUNT(*) FILTER (WHERE p.status = 'assembled') AS assembled_count,
+           AVG(
+               CAST(json_extract(p.assembled, '$.stats.thread_resolution_rate') AS REAL)
+           ) AS avg_thread_resolution_rate
+    FROM prs p
+    JOIN chatbots c ON p.chatbot_id = c.id
+    WHERE p.status IN ('assembled', 'analyzed')
+      AND ($1::int IS NULL OR p.chatbot_id = $1)
+    GROUP BY c.github_username
+    ORDER BY assembled_count DESC
+    LIMIT $2
+"""

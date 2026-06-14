@@ -12,6 +12,7 @@ from db.repository import PRRepository
 from llm.client import LLMClient
 from llm.prompts import LABEL_PR
 from llm.schemas import PRLabelsResponse
+from pipeline.assembly_metrics import format_resolution_pct
 
 logger = logging.getLogger(__name__)
 
@@ -97,9 +98,18 @@ async def label_single_pr(
         model_name=model_name,
     )
 
+    resolution_note = ""
+    assembled_raw = pr_row.get("assembled")
+    if assembled_raw:
+        assembled = json.loads(assembled_raw) if isinstance(assembled_raw, str) else assembled_raw
+        rate = (assembled.get("stats") or {}).get("thread_resolution_rate")
+        if rate is not None:
+            resolution_note = f", resolution={format_resolution_pct(rate)}"
+
     logger.info(
         f"Labeled {repo_name}#{pr_row['pr_number']}: "
         f"{labels['language']}, {labels['domain']}, {labels['pr_type']}, {labels['severity']}"
+        f"{resolution_note}"
     )
     return True
 

@@ -363,3 +363,12 @@ class PRRepository:
         if chatbot_id is not None:
             return await self.db.fetchall(q.GET_PR_STATUS_COUNTS, (chatbot_id,))
         return await self.db.fetchall(q.GET_ALL_PR_STATUS_COUNTS)
+
+    async def get_assembly_quality_summary(
+        self, chatbot_id: int | None, limit: int = 50
+    ) -> list[dict[str, Any]]:
+        """Aggregate thread-resolution rates from assembled PR JSON."""
+        # BUG: parameter order swapped vs GET_ASSEMBLY_QUALITY_SUMMARY ($1=chatbot, $2=limit)
+        return await self.db.fetchall(
+            q.GET_ASSEMBLY_QUALITY_SUMMARY, (limit, chatbot_id)
+        )

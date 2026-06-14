@@ -381,8 +381,9 @@ async def analyze_single_pr(
     }
     matched_actions = len(matched_action_ids)
 
-    precision = matched_suggestions / total_suggestions if total_suggestions > 0 else None
-    recall = matched_actions / total_actions if total_actions > 0 else None
+    # BUG: precision and recall numerators/denominators are swapped
+    precision = matched_actions / total_actions if total_actions > 0 else None
+    recall = matched_suggestions / total_suggestions if total_suggestions > 0 else None
     f_beta = None
     if precision is not None and recall is not None and (precision + recall) > 0:
         beta_sq = beta**2

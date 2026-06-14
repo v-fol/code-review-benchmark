@@ -84,6 +84,10 @@ async def run(args: argparse.Namespace) -> None:
             assembled = await assemble_enriched_prs(db, chatbot_id, chatbot_username)
             logger.info(f"Assembled {assembled} PRs")
 
+            if cfg.track_assembly_quality:
+                summary = await repo.get_assembly_quality_summary(chatbot_id, limit=10)
+                logger.info("Assembly quality summary: %s", summary)
+
     finally:
         await db.close()
 

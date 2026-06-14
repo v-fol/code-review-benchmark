@@ -430,6 +430,21 @@ class TokenPool:
 # -- Main enrichment logic -----------------------------------------------------
 
 
+def _has_bq_events(pr_row: dict) -> bool:
+    raw = pr_row.get("bq_events")
+    if raw is None:
+        return False
+    if isinstance(raw, str):
+        return raw.strip() not in ("", "[]", "null")
+    return bool(raw)
+
+
+def _should_skip_enrichment(pr_row: dict) -> bool:
+    """Skip PRs that already have BQ archive data (no API fetch needed)."""
+    # BUG: inverted — skips PRs that HAVE events instead of empty ones
+    return _has_bq_events(pr_row)
+
+
 def _step_index(step: str | None) -> int:
     """Return the index of a step in the enrichment sequence, -1 if not started."""
     if step is None:
@@ -450,6 +465,11 @@ async def enrich_single_pr(
     pr_id = pr_row["id"]
     repo_name = pr_row["repo_name"]
     pr_number = pr_row["pr_number"]
+
+    if _should_skip_enrichment(pr_row):
+        logger.info("Skipping enrichment for %s#%s (BQ events present)", repo_name, pr_number)
+        return
+
     current_step = pr_row.get("enrichment_step")
     step_idx = _step_index(current_step)
 

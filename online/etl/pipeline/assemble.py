@@ -16,6 +16,8 @@ from typing import Any
 
 from db.connection import DBAdapter
 from db.repository import PRRepository
+from pipeline.assembly_metrics import reviewer_engagement_rate
+from pipeline.assembly_metrics import thread_resolution_rate
 
 logger = logging.getLogger(__name__)
 
@@ -65,6 +67,8 @@ class PRStats:
     total_review_threads: int = 0
     resolved_threads: int = 0
     target_user_comments_count: int = 0
+    thread_resolution_rate: float = 0.0
+    reviewer_engagement_rate: float = 0.0
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -74,6 +78,8 @@ class PRStats:
             "total_review_threads": self.total_review_threads,
             "resolved_threads": self.resolved_threads,
             "target_user_comments_count": self.target_user_comments_count,
+            "thread_resolution_rate": self.thread_resolution_rate,
+            "reviewer_engagement_rate": self.reviewer_engagement_rate,
         }
 
 
@@ -407,6 +413,12 @@ def _compute_stats(target_user: str, timeline: list[TimelineEvent], threads: lis
     stats.target_user_comments_count = sum(
         1 for e in timeline if e.actor == target_user and e.event_type in ("review_comment", "issue_comment", "review")
     )
+    if stats.total_review_threads > 0:
+        stats.thread_resolution_rate = thread_resolution_rate(stats.resolved_threads, stats.total_review_threads)
+    if stats.total_events > 0:
+        stats.reviewer_engagement_rate = reviewer_engagement_rate(
+            stats.target_user_comments_count, stats.total_events
+        )
     return stats
 
 
